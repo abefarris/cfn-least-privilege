@@ -139,19 +139,104 @@ Nothing that touches AWS starts without both: an ARN built against the
 wrong account is not an error the tools could recover from, since
 `purge_all()` deletes what it enumerates.
 
-Prerequisites: a CloudFormation service role to test (start it at
-`ReadOnlyAccess`), plus a second admin role for forcing teardown of wedged
-stacks. `cfn-lint` must be on `PATH`.
+### Prerequisites
+
+`cfn-lint` and the `aws` CLI on `PATH`, credentials for the target account,
+and four IAM roles that the tools do **not** create. They only ever
+`put-role-policy` onto a role that already exists, so a missing one surfaces
+as a deploy failure rather than as a clear error.
+
+All four are CloudFormation *service* roles: CloudFormation assumes them, so
+they trust `cloudformation.amazonaws.com`, not you.
+
+```bash
+cat > /tmp/cfn-trust.json <<'JSON'
+{"Version": "2012-10-17", "Statement": [{
+  "Effect": "Allow",
+  "Principal": {"Service": "cloudformation.amazonaws.com"},
+  "Action": "sts:AssumeRole"
+}]}
+JSON
+
+# 1. deny-first subject: starts at ReadOnlyAccess, the loop grows it
+aws iam create-role --role-name cfn-deploy-role \
+    --assume-role-policy-document file:///tmp/cfn-trust.json
+aws iam attach-role-policy --role-name cfn-deploy-role \
+    --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess
+
+# 2. admin-first subject: never fails, so CloudTrail records real calls
+aws iam create-role --role-name cfn-admin-role \
+    --assume-role-policy-document file:///tmp/cfn-trust.json
+aws iam attach-role-policy --role-name cfn-admin-role \
+    --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+
+# 3. converge subject: bare on purpose, seeded from the admin-derived policy
+aws iam create-role --role-name cfn-derived-role \
+    --assume-role-policy-document file:///tmp/cfn-trust.json
+
+# 4. cleanup: forces teardown of a stack the subject role cannot unwind
+aws iam create-role --role-name cfn-cleanup-role \
+    --assume-role-policy-document file:///tmp/cfn-trust.json
+aws iam attach-role-policy --role-name cfn-cleanup-role \
+    --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+```
+
+Role 3 is deliberately bare: `converge_admin.py` seeds it from
+`results/admin-policy.json` in order to measure that policy's shortfall, so
+any starting permissions would contaminate the measurement.
+
+That trust policy carries no `aws:SourceArn` or `aws:SourceAccount`
+condition, which is the confused-deputy gap noted under Known limitations.
+Adding `"Condition": {"StringEquals": {"aws:SourceAccount": "<account>"}}`
+is strictly better and does not affect the experiment.
+
+**You** need enough to create those roles, pass them to CloudFormation, and
+delete what a failed run abandons: `iam:CreateRole`, `iam:PassRole`,
+`iam:PutRolePolicy`, `cloudformation:*`, `cloudtrail:LookupEvents`, and
+delete permissions across the nine services `purge_all()` sweeps. In
+practice this is an admin in a sandbox account, which is the only place any
+of this should run — `purge_all()` deletes every resource whose name
+contains `IAMD_STACK`, and the deny-first loop deliberately drives the stack
+into failure states.
+
+### Reproducing the experiment
 
 Use `tools/pipeline.py` rather than sequencing these by hand — it checks the
 preconditions each stage silently depends on and refuses instead of producing
 a plausible wrong answer:
 
 ```bash
-python3 tools/pipeline.py --all --dry-run          # resolve the plan
+python3 tools/pipeline.py --all --dry-run          # resolve the plan, run nothing
 python3 tools/pipeline.py --stages preflight,admin,compare --allow-destructive
 python3 tools/pipeline.py --all --allow-destructive
 ```
+
+The three lines are increasing levels of commitment, and the middle one is
+the honest starting point: it exercises the admin-first half in about five
+minutes and writes a comparison, without spending hours on the deny-first
+loop.
+
+| Stage | Wall clock | What it costs |
+| --- | --- | --- |
+| `preflight` | seconds | nothing; refuses rather than guesses |
+| `purge`, `reset` | ~3 min | deletes leftovers from an abandoned run |
+| `deny` | **hours** (~20 deploy/fail iterations) | the full deny-first derivation |
+| `admin` | ~5 min | one deploy as admin, then CloudTrail |
+| `converge` | up to an hour | measures the admin-first shortfall |
+| `compare` | seconds | no AWS calls |
+| `teardown` | under a minute if clean, longer with a stack to delete | deletes the stack and its orphans |
+
+Everything lands in `runs/<timestamp>/` and overwrites `results/`, so
+`git diff results/` after a run is the real comparison against what is
+committed here. A run is resumable: the loop seeds from
+`results/deploy-policy.json`, so an interrupted run costs only the current
+iteration. To measure a genuine from-zero derivation, include the `reset`
+stage — otherwise the seed makes it converge in one pass and measure nothing.
+
+Expect the numbers to differ from the committed ones. AWS changes which
+denials surface and in what order, and the README records one such drift
+already: a from-zero rerun produced the same 44 actions in 17 statements
+rather than 15.
 
 Every stage writes into one `runs/<timestamp>/` and the outcome lands in
 `pipeline.json`, so a scheduler can branch on the result without parsing logs.
