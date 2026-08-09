@@ -1,0 +1,153 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "lambda:CreateEventSourceMapping",
+      "Resource": "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-process"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "logs:DescribeResourcePolicies",
+      "Resource": [
+        "arn:aws:logs:us-east-2:123456789012:log-group:/aws/lambda/order-pipeline-iamtest-dev-ingest",
+        "arn:aws:logs:us-east-2:123456789012:log-group:/aws/lambda/order-pipeline-iamtest-dev-process",
+        "arn:aws:logs:us-east-2:123456789012:log-group:/aws/lambda/order-pipeline-iamtest-dev-report"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sqs:CreateQueue",
+      "Resource": [
+        "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders",
+        "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders-dlq"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DeleteTable",
+        "dynamodb:DescribeContinuousBackups",
+        "dynamodb:DescribeContributorInsights",
+        "dynamodb:DescribeKinesisStreamingDestination",
+        "dynamodb:DescribeTable",
+        "dynamodb:DescribeTimeToLive",
+        "dynamodb:ListTagsOfResource",
+        "dynamodb:UpdateTimeToLive"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-2:123456789012:table/order-pipeline-iamtest-dev-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "events:DeleteRule",
+        "events:DescribeRule",
+        "events:ListTagsForResource",
+        "events:ListTargetsByRule",
+        "events:PutRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:TagResource",
+        "iam:AttachRolePolicy",
+        "iam:CreatePolicy",
+        "iam:CreateRole",
+        "iam:DeletePolicy",
+        "iam:DeleteRole",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:GetAccountSummary",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListEntitiesForPolicy",
+        "iam:ListPolicyVersions",
+        "iam:ListRolePolicies",
+        "iam:PutRolePolicy",
+        "lambda:AddPermission",
+        "lambda:CreateFunction",
+        "lambda:DeleteFunction",
+        "lambda:GetAccountSettings",
+        "lambda:GetFunction",
+        "lambda:GetFunctionCodeSigningConfig",
+        "lambda:GetFunctionRecursionConfig",
+        "lambda:GetPolicy",
+        "lambda:GetRuntimeManagementConfig",
+        "lambda:RemovePermission",
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:DescribeIndexPolicies",
+        "logs:DescribeLogGroups",
+        "logs:ListTagsForResource",
+        "logs:PutRetentionPolicy",
+        "s3:CreateBucket",
+        "sns:CreateTopic",
+        "states:CreateStateMachine",
+        "states:DeleteStateMachine",
+        "states:DescribeStateMachine",
+        "states:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:CreateGrant",
+        "kms:Decrypt",
+        "kms:DescribeKey",
+        "kms:Encrypt"
+      ],
+      "Resource": "arn:aws:kms:us-east-2:123456789012:key/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:DeleteEventSourceMapping",
+        "lambda:GetEventSourceMapping",
+        "lambda:ListTags"
+      ],
+      "Resource": "arn:aws:lambda:us-east-2:123456789012:event-source-mapping:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:DeleteBucket",
+        "s3:DeleteBucketPolicy",
+        "s3:GetAccelerateConfiguration",
+        "s3:GetBucketAbac",
+        "s3:GetBucketLogging",
+        "s3:GetBucketNotification",
+        "s3:GetBucketOwnershipControls",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketVersioning",
+        "s3:ListTagsForResource",
+        "s3:PutBucketPolicy",
+        "s3:PutBucketPublicAccessBlock"
+      ],
+      "Resource": "arn:aws:s3:::order-pipeline-iamtest-dev-123456789012-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sns:DeleteTopic",
+        "sns:GetDataProtectionPolicy",
+        "sns:GetTopicAttributes",
+        "sns:ListSubscriptionsByTopic",
+        "sns:ListTagsForResource",
+        "sns:SetTopicAttributes"
+      ],
+      "Resource": "arn:aws:sns:us-east-2:123456789012:order-pipeline-iamtest-dev-order-events"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:DeleteQueue",
+        "sqs:SetQueueAttributes"
+      ],
+      "Resource": "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "lambda:CreateEventSourceMapping",
+      "Resource": "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-process"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "lambda:DeleteEventSourceMapping",
+      "Resource": "arn:aws:lambda:us-east-2:123456789012:event-source-mapping:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sqs:CreateQueue",
+      "Resource": [
+        "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders",
+        "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders-dlq"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DeleteTable",
+        "dynamodb:UpdateTimeToLive"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-2:123456789012:table/order-pipeline-iamtest-dev-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "events:DeleteRule",
+        "events:PutRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:TagResource",
+        "iam:AttachRolePolicy",
+        "iam:CreatePolicy",
+        "iam:CreateRole",
+        "iam:DeletePolicy",
+        "iam:DeleteRole",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "lambda:AddPermission",
+        "lambda:CreateFunction",
+        "lambda:DeleteFunction",
+        "lambda:RemovePermission",
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:PutRetentionPolicy",
+        "s3:CreateBucket",
+        "sns:CreateTopic",
+        "states:CreateStateMachine",
+        "states:DeleteStateMachine"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:CreateGrant",
+        "kms:Decrypt",
+        "kms:Encrypt"
+      ],
+      "Resource": "arn:aws:kms:us-east-2:123456789012:key/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:DeleteBucket",
+        "s3:DeleteBucketPolicy",
+        "s3:PutBucketPolicy",
+        "s3:PutBucketPublicAccessBlock"
+      ],
+      "Resource": "arn:aws:s3:::order-pipeline-iamtest-dev-123456789012-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sns:DeleteTopic",
+        "sns:SetTopicAttributes"
+      ],
+      "Resource": "arn:aws:sns:us-east-2:123456789012:order-pipeline-iamtest-dev-order-events"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:DeleteQueue",
+        "sqs:SetQueueAttributes"
+      ],
+      "Resource": "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders"
+    }
+  ]
+}

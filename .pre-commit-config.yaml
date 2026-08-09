@@ -1,0 +1,32 @@
+# Install once with: pre-commit install
+# Settings come from pyproject.toml, so these hooks, `make lint` and CI agree.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+        stages: [manual]   # pyink owns formatting; keep ruff-format off by default
+
+  - repo: https://github.com/google/pyink
+    rev: 25.12.0
+    hooks:
+      - id: black          # the fork keeps black's hook id
+        name: pyink
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      # results/ holds derived policies; runs/ holds raw CloudTrail. Neither
+      # should ever carry a credential, so fail loudly if one appears.
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: [--maxkb=512]
+        exclude: '^(results/|archive/)'

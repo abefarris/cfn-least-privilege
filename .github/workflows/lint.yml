@@ -1,0 +1,67 @@
+name: lint
+
+# The only place these checks are actually enforced: a pre-commit hook can be
+# skipped and a Makefile target can be forgotten.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: install tools
+        run: pip install ruff pyink pylint bandit pytest
+
+      # F821 undefined-name is why this job exists: it catches a name used
+      # before definition, which once left four of five scripts unrunnable.
+      - name: ruff
+        run: ruff check tools tests
+
+      - name: pyink --check
+        run: pyink --check tools tests
+
+      # LOW findings are all subprocess-related and inherent to a tool whose
+      # job is driving the AWS CLI. Gate on MEDIUM and above.
+      - name: bandit
+        run: bandit -q -r tools --severity-level medium
+
+      - name: byte-compile every tool
+        run: python -m compileall -q tools
+
+      # Importing each module executes everything at module scope. It is the
+      # cheapest possible check that a tool can still start, and needs no AWS
+      # credentials because nothing calls out until main() runs.
+      - name: import check
+        run: |
+          for f in tools/discover.py tools/admin_discover.py \
+                   tools/compare_policies.py tools/converge_admin.py \
+                   tools/pipeline.py tools/config.py tools/uninstall.py; do
+            python -c "
+          import importlib.util, sys, pathlib
+          p = pathlib.Path('$f')
+          spec = importlib.util.spec_from_file_location(p.stem, p)
+          m = importlib.util.module_from_spec(spec)
+          sys.modules[p.stem] = m
+          spec.loader.exec_module(m)
+          print('ok', p)
+          "
+          done
+
+      # Unit tier only: no credentials, no network, no AWS calls. The
+      # integration tiers are opt-in flags and deliberately never run here --
+      # CI has no sandbox account to deploy into, and a test that silently
+      # skipped would be worse than one that is absent.
+      - name: pytest
+        run: pytest -q

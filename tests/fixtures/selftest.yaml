@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Smallest stack that still exercises the real deploy path: parameters flow
+  in, one resource is created under a derived name, and the whole thing
+  deletes cleanly. An SNS topic is free, creates in seconds, and needs no
+  network, VPC, or IAM capability -- which keeps the integration test cheap
+  enough that there is no excuse not to run it.
+
+Parameters:
+  # deploy() always passes both of these. The test asserts they arrive, which
+  # is what catches a broken --parameter-overrides construction.
+  ProjectName:
+    Type: String
+    Description: Names every resource, and is what purge matches on.
+  Environment:
+    Type: String
+    Default: dev
+
+Resources:
+  SelfTestTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      # The derived name is the assertion: it can only be right if both
+      # parameters actually reached CloudFormation.
+      TopicName: !Sub "${ProjectName}-${Environment}-selftest"
+
+Outputs:
+  TopicArn:
+    Description: ARN of the topic, checked by the integration test.
+    Value: !Ref SelfTestTopic
+  TopicName:
+    Description: Derived name, proving parameter substitution happened.
+    Value: !GetAtt SelfTestTopic.TopicName

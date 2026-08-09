@@ -1,0 +1,27 @@
+{
+  "extra_passes": 15,
+  "seconds": 3059,
+  "seeded_actions": 87,
+  "actions_added": [
+    "dynamodb:DescribeContributorInsights",
+    "dynamodb:GetResourcePolicy",
+    "ec2:DescribeNetworkInterfaces",
+    "iam:PassRole",
+    "lambda:CreateEventSourceMapping",
+    "lambda:CreateFunction",
+    "lambda:GetEventSourceMapping",
+    "s3:CreateBucket",
+    "s3:GetBucketCors",
+    "s3:GetBucketMetadataTableConfiguration",
+    "s3:GetBucketObjectLockConfiguration",
+    "s3:GetBucketWebsite",
+    "s3:PutBucketTagging",
+    "s3:PutEncryptionConfiguration",
+    "s3:PutLifecycleConfiguration",
+    "s3:TagResource",
+    "sqs:DeleteQueue",
+    "sqs:getqueueattributes",
+    "states:CreateStateMachine",
+    "states:TagResource"
+  ]
+}

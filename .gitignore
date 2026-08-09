@@ -1,0 +1,31 @@
+# Per-invocation output: append-mode run logs and the raw CloudTrail streams.
+# One directory per run, so two runs stay comparable instead of concatenated
+# and a tracked working tree stays clean across re-runs.
+#
+# Curated output lives in results/ and IS tracked: those are the artifacts the
+# README cites, and results/deploy-policy.json doubles as the resume state.
+runs/
+
+# Probe template written at runtime by discover.phase_rollback().
+tools/order-pipeline-broken.yaml
+
+# Names a real account. .env.example is the tracked copy, with a placeholder.
+.env
+
+# Scratch note holding a session id, not part of the project.
+resume.txt
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Fetched by 'make pylintrc', not authored here.
+pylintrc

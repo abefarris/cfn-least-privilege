@@ -1,0 +1,168 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "lambda:CreateEventSourceMapping",
+      "Resource": [
+        "arn:aws:lambda:us-east-2:123456789012:event-source-mapping:*",
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-process"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "lambda:CreateFunction",
+      "Resource": [
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-ingest-role",
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-process-role",
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-report-role",
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-ingest",
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-process",
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-report"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "lambda:DeleteEventSourceMapping",
+      "Resource": "arn:aws:lambda:us-east-2:123456789012:event-source-mapping:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "lambda:DeleteFunction",
+      "Resource": [
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-ingest",
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-process",
+        "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-report"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sqs:SetQueueAttributes",
+      "Resource": "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "states:CreateStateMachine",
+      "Resource": [
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-reconcile-sfn-role",
+        "arn:aws:states:us-east-2:123456789012:stateMachine:order-pipeline-iamtest-dev-reconcile"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DeleteTable",
+        "dynamodb:UpdateTimeToLive"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-2:123456789012:table/order-pipeline-iamtest-dev-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "events:DeleteRule",
+        "events:PutRule",
+        "events:PutTargets",
+        "events:RemoveTargets",
+        "events:TagResource"
+      ],
+      "Resource": "arn:aws:events:us-east-2:123456789012:rule/order-pipeline-iamtest-dev-report-schedule"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy"
+      ],
+      "Resource": "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-ingest-role"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreatePolicy",
+        "iam:DeletePolicy"
+      ],
+      "Resource": "arn:aws:iam::123456789012:policy/order-pipeline-iamtest-dev-platform-service"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:DeleteRolePolicy",
+        "iam:PassRole",
+        "iam:PutRolePolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-ingest-role",
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-process-role",
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-reconcile-sfn-role",
+        "arn:aws:iam::123456789012:role/order-pipeline-iamtest-dev-report-role"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:AddPermission",
+        "lambda:RemovePermission"
+      ],
+      "Resource": "arn:aws:lambda:us-east-2:123456789012:function:order-pipeline-iamtest-dev-report"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:DeleteLogGroup",
+        "logs:PutRetentionPolicy"
+      ],
+      "Resource": [
+        "arn:aws:logs:us-east-2:123456789012:log-group:/aws/lambda/order-pipeline-iamtest-dev-ingest:*",
+        "arn:aws:logs:us-east-2:123456789012:log-group:/aws/lambda/order-pipeline-iamtest-dev-process:*",
+        "arn:aws:logs:us-east-2:123456789012:log-group:/aws/lambda/order-pipeline-iamtest-dev-report:*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:DeleteBucket",
+        "s3:DeleteBucketPolicy",
+        "s3:PutBucketPolicy",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutBucketTagging",
+        "s3:PutEncryptionConfiguration",
+        "s3:PutLifecycleConfiguration",
+        "s3:TagResource"
+      ],
+      "Resource": "arn:aws:s3:::order-pipeline-iamtest-dev-123456789012-orders"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sns:CreateTopic",
+        "sns:DeleteTopic",
+        "sns:SetTopicAttributes"
+      ],
+      "Resource": "arn:aws:sns:us-east-2:123456789012:order-pipeline-iamtest-dev-order-events"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:CreateQueue",
+        "sqs:DeleteQueue"
+      ],
+      "Resource": [
+        "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders",
+        "arn:aws:sqs:us-east-2:123456789012:order-pipeline-iamtest-dev-orders-dlq"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "states:DeleteStateMachine",
+        "states:TagResource"
+      ],
+      "Resource": "arn:aws:states:us-east-2:123456789012:stateMachine:order-pipeline-iamtest-dev-reconcile"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach (port 5678)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "127.0.0.1", "port": 5678 },
+      "pathMappings": [
+        { "localRoot": "${workspaceFolder}", "remoteRoot": "${workspaceFolder}" }
+      ],
+      "justMyCode": false
+    },
+    {
+      "name": "discover.py (deny-first, HOURS)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/discover.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": { "AWS_PROFILE": "${env:AWS_PROFILE}" }
+    },
+    {
+      "name": "admin_discover.py (~5 min, DEPLOYS AS ADMIN)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/admin_discover.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": { "AWS_PROFILE": "${env:AWS_PROFILE}" }
+    },
+    {
+      "name": "converge_admin.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/converge_admin.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": { "AWS_PROFILE": "${env:AWS_PROFILE}" }
+    },
+    {
+      "name": "compare_policies.py (no AWS calls, safe)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/compare_policies.py",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "uninstall.py (DESTRUCTIVE)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/uninstall.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": { "AWS_PROFILE": "${env:AWS_PROFILE}" }
+    }
+  ]
+}
