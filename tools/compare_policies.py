@@ -14,6 +14,7 @@ and silently truncated ~50 lines of conclusions on every run.
 import json
 import os
 import sys
+import time
 
 # Resolve paths relative to this file so the tools keep working wherever
 # the repo is checked out.
@@ -81,6 +82,61 @@ def size(doc):
     return len(json.dumps(doc, separators=(",", ":")))
 
 
+def age(path):
+    """Return how long ago a file was last written, in seconds.
+
+    Args:
+        path: File to stat.
+
+    Returns:
+        Seconds since it was modified, or None if it does not exist.
+    """
+    try:
+        return time.time() - os.path.getmtime(path)
+    except OSError:
+        return None
+
+
+def provenance():
+    """Say which half of the comparison came from this run.
+
+    The two columns are read from separate files written by separate stages,
+    and only the stage that ran rewrites its own. Running the admin half
+    alone therefore produces a table that reads as a full reproduction while
+    the deny-first column is whatever was already on disk -- shipped
+    artifacts, in a fresh clone. Reporting a number without saying where it
+    came from is the exact failure this project exists to study, so the
+    report says it.
+
+    Reports the gap between the two sides rather than their absolute ages.
+    An absolute age is meaningless in a committed artifact -- git does not
+    preserve mtimes, so a fresh clone would claim both sides are seconds
+    old -- while the gap is exactly the signal wanted: near zero in a clone,
+    and hours wide the moment one stage is re-run without the other.
+
+    Returns:
+        Markdown lines stating the caveat, and the skew when there is one.
+    """
+    caveat = (
+        "Each column is rewritten only by the stage that produces it, so "
+        "running one half compares fresh output against whatever the other "
+        "half last left on disk."
+    )
+    deny_age, admin_age = age(DENY), age(ADMIN_MUT)
+    if deny_age is None or admin_age is None:
+        return [f"> Provenance — a side is missing. {caveat}\n"]
+
+    skew = abs(deny_age - admin_age)
+    if skew < 3600:
+        return [f"> Provenance — both sides written together. {caveat}\n"]
+    stale = "deny-first" if deny_age > admin_age else "admin-first"
+    return [
+        f"> **Provenance — mixed: the {stale} column is "
+        f"{skew / 3600:.0f}h older than the other and did not come from "
+        f"this run.** {caveat}\n"
+    ]
+
+
 def main():
     """Write the deny-first vs admin-first comparison table.
 
@@ -107,6 +163,7 @@ def main():
         "Two ways to derive a deployment policy for the same "
         "CloudFormation stack.\n"
     )
+    lines.extend(provenance())
     lines.append("| | Deny-first | Admin-first |")
     lines.append("| --- | --- | --- |")
     lines.append(

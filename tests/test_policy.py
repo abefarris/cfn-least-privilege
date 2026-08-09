@@ -288,6 +288,117 @@ def test_verify_account_refuses_without_a_stack(resolve):
         discover.verify_account()
 
 
+def test_preflight_knows_which_roles_each_stage_needs():
+    """Every stage that hands a role to CloudFormation declares which one.
+
+    A stage missing from the map is a stage whose role goes unchecked, which
+    is how preflight came to pass against an account with no roles at all.
+    """
+    import pipeline
+
+    needs_role = {
+        "purge",
+        "reset",
+        "deny",
+        "admin",
+        "converge",
+        "teardown",
+    }
+    assert needs_role <= set(pipeline.STAGE_ROLES)
+    for stage, keys in pipeline.STAGE_ROLES.items():
+        assert stage in pipeline.STAGES, f"{stage} is not a real stage"
+        for key in keys:
+            assert key in config.SETTINGS, f"{stage} names unknown role {key}"
+
+
+@pytest.mark.parametrize(
+    ("doc", "expected"),
+    [
+        (
+            {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "cloudformation.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole",
+                    }
+                ]
+            },
+            True,
+        ),
+        # A list of principals is equally valid.
+        (
+            {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "ec2.amazonaws.com",
+                                "cloudformation.amazonaws.com",
+                            ]
+                        },
+                        "Action": ["sts:AssumeRole"],
+                    }
+                ]
+            },
+            True,
+        ),
+        # Trusts something else entirely.
+        (
+            {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {"Service": "ec2.amazonaws.com"},
+                        "Action": "sts:AssumeRole",
+                    }
+                ]
+            },
+            False,
+        ),
+        # Right principal, but Deny.
+        (
+            {
+                "Statement": [
+                    {
+                        "Effect": "Deny",
+                        "Principal": {
+                            "Service": "cloudformation.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole",
+                    }
+                ]
+            },
+            False,
+        ),
+        # Right principal, wrong action.
+        (
+            {
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "cloudformation.amazonaws.com"
+                        },
+                        "Action": "sts:TagSession",
+                    }
+                ]
+            },
+            False,
+        ),
+        ({}, False),
+    ],
+)
+def test_trusts_service(doc, expected):
+    """A role that exists but cannot be assumed is not a usable role."""
+    import pipeline
+
+    assert pipeline.trusts_service(doc) is expected
+
+
 def test_survey_finds_nothing_without_a_stack():
     """An unconfigured survey must not match the whole account.
 

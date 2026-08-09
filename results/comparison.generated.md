@@ -2,6 +2,8 @@
 
 Two ways to derive a deployment policy for the same CloudFormation stack.
 
+> Provenance — both sides written together. Each column is rewritten only by the stage that produces it, so running one half compares fresh output against whatever the other half last left on disk.
+
 | | Deny-first | Admin-first |
 | --- | --- | --- |
 | Starting permissions | `ReadOnlyAccess` | `AdministratorAccess` |

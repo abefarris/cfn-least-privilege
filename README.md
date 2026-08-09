@@ -104,42 +104,7 @@ resume state despite naming an account that is not yours.
 would be rewritten on every invocation. The per-run logs this write-up is
 based on are therefore not published; `archive/` holds the curated remainder.
 
-## Running the tools
-
-Copy `.env.example` to `.env` and set the two required values:
-
-```bash
-cp .env.example .env
-$EDITOR .env          # IAMD_ACCOUNT and IAMD_STACK have no defaults
-```
-
-`IAMD_STACK` is deliberately not defaulted. It is the substring
-`purge_all()` matches orphaned resources on across nine services, so
-inheriting it would scope a real deletion to a name the operator never
-chose.
-
-Configuration resolves from four sources, lowest precedence first: the
-defaults in `tools/config.py`, then `.env`, then the environment, then
-command-line flags. Every setting has all three spellings — `IAMD_ADMIN_ROLE`
-in the file or the environment is `--admin-role` on the command line — so a
-one-off run against a different target needs no file at all:
-
-```bash
-python3 tools/discover.py --account 123456789012 --region us-west-2 \
-                          --stack my-stack --role my-deploy-role
-```
-
-`--help` on any tool lists the full set with its resolved defaults.
-`--env-file` points at a file somewhere other than the repo root, and
-`pipeline.py` exports whatever it resolved into the environment of every
-stage it runs, so a flag passed once applies to the whole workflow rather
-than to half of it.
-
-Nothing that touches AWS starts without both: an ARN built against the
-wrong account is not an error the tools could recover from, since
-`purge_all()` deletes what it enumerates.
-
-### Prerequisites
+## Prerequisites
 
 `cfn-lint` and the `aws` CLI on `PATH`, credentials for the target account,
 and four IAM roles that the tools do **not** create. They only ever
@@ -199,6 +164,42 @@ of this should run — `purge_all()` deletes every resource whose name
 contains `IAMD_STACK`, and the deny-first loop deliberately drives the stack
 into failure states.
 
+## Running the tools
+
+Copy `.env.example` to `.env` and set the two required values:
+
+```bash
+cp .env.example .env
+$EDITOR .env          # IAMD_ACCOUNT and IAMD_STACK have no defaults
+```
+
+`IAMD_STACK` is deliberately not defaulted. It is the substring
+`purge_all()` matches orphaned resources on across nine services, so
+inheriting it would scope a real deletion to a name the operator never
+chose.
+
+Configuration resolves from four sources, lowest precedence first: the
+defaults in `tools/config.py`, then `.env`, then the environment, then
+command-line flags. Every setting has all three spellings — `IAMD_ADMIN_ROLE`
+in the file or the environment is `--admin-role` on the command line — so a
+one-off run against a different target needs no file at all:
+
+```bash
+python3 tools/discover.py --account 123456789012 --region us-west-2 \
+                          --stack my-stack --role my-deploy-role
+```
+
+`--help` on any tool lists the full set with its resolved defaults.
+`--env-file` points at a file somewhere other than the repo root, and
+`pipeline.py` exports whatever it resolved into the environment of every
+stage it runs, so a flag passed once applies to the whole workflow rather
+than to half of it.
+
+Nothing that touches AWS starts without both: an ARN built against the
+wrong account is not an error the tools could recover from, since
+`purge_all()` deletes what it enumerates.
+
+
 ### Reproducing the experiment
 
 Use `tools/pipeline.py` rather than sequencing these by hand — it checks the
@@ -225,6 +226,15 @@ loop.
 | `converge` | up to an hour | measures the admin-first shortfall |
 | `compare` | seconds | no AWS calls |
 | `teardown` | under a minute if clean, longer with a stack to delete | deletes the stack and its orphans |
+
+**Each stage rewrites only its own artifacts.** Running the admin half alone
+regenerates `results/admin-policy.*` and leaves `results/deploy-policy.*` as
+it found them — the committed ones, in a fresh clone. The comparison then
+puts a fresh admin column beside a shipped deny-first column, which reads as
+a full reproduction and is not one. `compare_policies.py` states the age of
+each side at the top of its report so the two cannot be confused; deriving
+the deny-first column yourself means running the `deny` stage, and that is
+the one that costs hours.
 
 Everything lands in `runs/<timestamp>/` and overwrites `results/`, so
 `git diff results/` after a run is the real comparison against what is

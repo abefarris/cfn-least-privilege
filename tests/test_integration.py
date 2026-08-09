@@ -105,6 +105,32 @@ def test_aws_wrapper_surfaces_a_failure_without_raising(live):
     assert r.stderr
 
 
+def test_preflight_reports_a_missing_role(live, resolve):
+    """A role that does not exist is named, not discovered at deploy time.
+
+    Reproducing the experiment from a clean account used to get "all checks
+    passed" with none of the four roles created, then a CloudFormation error
+    that said nothing about roles. Read-only: it asks IAM for a role whose
+    name no account should have.
+    """
+    import pipeline
+
+    resolve(
+        "--account",
+        live.ACCOUNT,
+        "--region",
+        live.REGION,
+        "--stack",
+        SELFTEST_STACK,
+        "--cleanup-role",
+        "iam-discovery-role-that-does-not-exist",
+    )
+    problems = pipeline.check_roles(["teardown"])
+    assert len(problems) == 1
+    assert "iam-discovery-role-that-does-not-exist" in problems[0]
+    assert "--cleanup-role" in problems[0]
+
+
 # --- destructive ----------------------------------------------------------
 
 

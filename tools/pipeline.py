@@ -84,6 +84,100 @@ def emit(msg, level=d.L_INFO):
     d.log(msg, level)
 
 
+# Which configured role each stage hands to CloudFormation. Checked per
+# selected stage rather than all at once, so a compare-only run is not made
+# to invent roles it never uses.
+STAGE_ROLES = {
+    "purge": ("cleanup_role",),
+    "reset": ("role",),
+    "deny": ("role", "cleanup_role"),
+    "admin": ("admin_role", "cleanup_role"),
+    "converge": ("derived_role", "cleanup_role"),
+    "teardown": ("cleanup_role",),
+}
+
+CFN_PRINCIPAL = "cloudformation.amazonaws.com"
+
+
+def trusts_service(trust_doc, service=CFN_PRINCIPAL):
+    """Report whether a trust policy lets a service assume the role.
+
+    A role that exists but does not trust CloudFormation fails at deploy
+    time with an error about the role, not about the trust policy, so the
+    two cases are worth telling apart before anything runs.
+
+    Args:
+        trust_doc: A parsed AssumeRolePolicyDocument.
+        service: The service principal to look for.
+
+    Returns:
+        True if any Allow statement grants sts:AssumeRole to the service.
+    """
+    for st in (trust_doc or {}).get("Statement", []):
+        if st.get("Effect") != "Allow":
+            continue
+        principal = st.get("Principal", {}).get("Service", [])
+        if isinstance(principal, str):
+            principal = [principal]
+        actions = st.get("Action", [])
+        if isinstance(actions, str):
+            actions = [actions]
+        if service in principal and any(
+            a.lower() in ("sts:assumerole", "sts:*") for a in actions
+        ):
+            return True
+    return False
+
+
+def check_roles(stages):
+    """Verify every role the selected stages need exists and is assumable.
+
+    The gap this closes: preflight used to pass against an account with none
+    of the roles created, because it checked credentials, binaries and
+    leftovers but never the roles themselves. Role setup is the most likely
+    first-run failure, and without this the reader gets a CloudFormation
+    error rather than a sentence naming the missing role.
+
+    Args:
+        stages: The selected stage names.
+
+    Returns:
+        A list of failure strings; empty means every needed role is usable.
+    """
+    needed = sorted({k for s in stages for k in STAGE_ROLES.get(s, ())})
+    problems = []
+    for key in needed:
+        name = getattr(config, key.upper())
+        r = d.aws(
+            "iam",
+            "get-role",
+            "--role-name",
+            name,
+            "--query",
+            "Role.AssumeRolePolicyDocument",
+            "--output",
+            "json",
+        )
+        if r.returncode != 0:
+            problems.append(
+                f"role {name} (--{key.replace('_', '-')}) does not exist or "
+                f"is not readable; see Prerequisites in the README"
+            )
+            continue
+        try:
+            trust = json.loads(r.stdout or "{}")
+        except json.JSONDecodeError:
+            trust = {}
+        if not trusts_service(trust):
+            problems.append(
+                f"role {name} (--{key.replace('_', '-')}) does not trust "
+                f"{CFN_PRINCIPAL}; CloudFormation cannot assume it"
+            )
+        else:
+            emit(f"  role {name} present and assumable")
+    return problems
+
+
 def preflight(cfg):
     """Check every precondition the stages silently depend on.
 
@@ -137,6 +231,11 @@ def preflight(cfg):
 
     if not os.path.exists(d.TEMPLATE):
         problems.append(f"template missing: {d.TEMPLATE}")
+
+    # Only worth asking IAM once the credentials are known good; against bad
+    # ones every role would report missing and bury the real problem.
+    if not problems:
+        problems.extend(check_roles(cfg.stages))
 
     leftovers = survey()
     if leftovers and "purge" not in cfg.stages and "teardown" not in cfg.stages:
